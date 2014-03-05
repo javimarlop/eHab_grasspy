@@ -82,63 +82,63 @@ dem.open('r')
 dem22 = dem.flatten()
 
 print "dem 1"
-np.isnan(dem22)
+#np.isnan(dem22)
 
 tree = pygrass.raster.RasterNumpy('tree')
 tree.open('r')
 tree22 = tree.flatten()
 
 print "tree 2"
-np.isnan(tree22)
+#np.isnan(tree22)
 
-epr = pygrass.raster.RasterNumpy('epr')
+epr = pygrass.raster.RasterNumpy('epr2')
 epr.open('r')
 epr22 = epr.flatten()
 
 print "epr 3"
-np.isnan(epr22)
+#np.isnan(epr22)
 
-pre = pygrass.raster.RasterNumpy('pre')
+pre = pygrass.raster.RasterNumpy('pre2')
 pre.open('r')
 pre22 = pre.flatten()
 
 print "pre 4"
-np.isnan(pre22)
+#np.isnan(pre22)
 
-bio = pygrass.raster.RasterNumpy('bio')
+bio = pygrass.raster.RasterNumpy('bio2')
 bio.open('r')
 bio22 = bio.flatten()
 
 print "bio 5"
-np.isnan(bio22)
+#np.isnan(bio22)
 
-slope = pygrass.raster.RasterNumpy('slope')
+slope = pygrass.raster.RasterNumpy('slope2')
 slope.open('r')
 slope22 = slope.flatten()
 
 print "slope 6"
-np.isnan(slope22)
+#np.isnan(slope22)
 
 ndwi = pygrass.raster.RasterNumpy('ndwi')
 ndwi.open('r')
 ndwi22 = ndwi.flatten()
 
 print "ndwi 7"
-np.isnan(ndwi22)
+#np.isnan(ndwi22)
 
 ndvi = pygrass.raster.RasterNumpy('ndvi')
 ndvi.open('r')
 ndvi22 = ndvi.flatten()
 
 print "ndvi 8"
-np.isnan(ndvi22)
+#np.isnan(ndvi22)
 
 herb = pygrass.raster.RasterNumpy('herb')
 herb.open('r')
 herb22 = herb.flatten()
 
 print "herb 9"
-np.isnan(herb22)
+#np.isnan(herb22)
 
 print "All global variables imported"
 
@@ -208,19 +208,32 @@ pmh = chisqprob(mh,9).reshape((1878,5046))
 print "pmh ok"
 # quitar valores muy bajos!
 
+out = pygrass.raster.RasterNumpy('results', mtype='FCELL')
+
+new[:] = pmh
+
+new.close()
+
+new.open()  # re-open the closed map
+new.close()  # then close
+os.system('d.erase')
+os.system('d.rast results')
+os.system('r.out.gdal in=results output=results.tif')
+
+print "results exported"
 # export!
 
-out = pygrass.raster.RasterNumpy('eco_pa22') # eco_pa22 is a raster map which I created just to fill it in with new values
+# out = pygrass.raster.RasterNumpy('eco_pa4') # eco_pa22 is a raster map which I created just to fill it in with new values
 
-out.open('w')
-#out.open('w')
-out.max()
-out.min()
-out = np.where(out >= 0,(pmh),(pmh))  # filling the map with the values from pmh. Also try "out[:] = pmh[:]"
-out.max()
-out.min()
-out.name='out' 
-out.close()
+# out.open('w')
+# #out.open('w')
+# out.max()
+# out.min()
+# out = np.where(out >= 0,(pmh),(pmh))  # filling the map with the values from pmh. Also try "out[:] = pmh[:]"
+# out.max()
+# out.min()
+# out.name='out' 
+# out.close()
 
 # calculate single HRI 0.5 value
 hr1 = pmh >= 0.5
@@ -240,13 +253,13 @@ with open('hri_results.csv', 'wb') as test_file:
 # io.show()
 
 
-print "exporting csv" # aqui exportariamos la imagen como tif con rasterio usando como modelo la creada para el PA!
+#print "exporting csv" # aqui exportariamos la imagen como tif con rasterio usando como modelo la creada para el PA!
 #np.savetxt("pmh.csv", pmh, delimiter=";")
 
 ## otros metodos para calcular las distancias!
-#mh = mahalanobis_distances(Ymean, Ycov, ind_eco, parallel=False)
-#mh = mahalanobis_distances(Ymean, Ycov, ind_eco, parallel=True)
-#mh = mahalanobis_distances_scipy(Ymean, Ycov, ind_eco, parallel=True)
-#mh = mahalanobis_distances_scipy(Ymean, Ycov, ind_eco, parallel=False)
+#mh = mahalanobis_distances(Ymean, Ycov, ind_global, parallel=False)
+#mh = mahalanobis_distances(Ymean, Ycov, ind_global, parallel=True)
+#mh = mahalanobis_distances_scipy(Ymean, Ycov, ind_global, parallel=True)
+#mh = mahalanobis_distances_scipy(Ymean, Ycov, ind_global, parallel=False)
 
 print "DONE"
