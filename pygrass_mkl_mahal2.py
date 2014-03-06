@@ -91,30 +91,34 @@ tree22 = tree.flatten()
 print "tree 2"
 #np.isnan(tree22)
 
-epr = pygrass.raster.RasterNumpy('epr2')
+epr = pygrass.raster.RasterNumpy('epr')
 epr.open('r')
 epr22 = epr.flatten()
+eprnf = np.where(np.isnan(epr22),(0),(epr22))
 
 print "epr 3"
 #np.isnan(epr22)
 
-pre = pygrass.raster.RasterNumpy('pre2')
+pre = pygrass.raster.RasterNumpy('pre')
 pre.open('r')
 pre22 = pre.flatten()
+prenf = np.where(np.isnan(pre22),(0),(pre22))
 
 print "pre 4"
 #np.isnan(pre22)
 
-bio = pygrass.raster.RasterNumpy('bio2')
+bio = pygrass.raster.RasterNumpy('bio')
 bio.open('r')
 bio22 = bio.flatten()
+bionf = np.where(np.isnan(bio22),(0),(bio22))
 
 print "bio 5"
 #np.isnan(bio22)
 
-slope = pygrass.raster.RasterNumpy('slope2')
+slope = pygrass.raster.RasterNumpy('slope')
 slope.open('r')
 slope22 = slope.flatten()
+slopenf = np.where(np.isnan(slope22),(0),(slope22))
 
 print "slope 6"
 #np.isnan(slope22)
@@ -142,7 +146,7 @@ print "herb 9"
 
 print "All global variables imported"
 
-ind_global = np.column_stack((dem22,bio22,pre22,epr22,herb22,ndvi22,ndwi22,slope22,tree22))
+ind_global = np.column_stack((dem22,bionf,prenf,eprnf,herb22,ndvi22,ndwi22,slopenf,tree22))
 
 print "open pa mask"
 pa2 = pygrass.raster.RasterNumpy('eco_pa2') # map with ecoreg region but nulls outside park
@@ -156,13 +160,13 @@ ind = np.where(pa3>0,(True),(False))
 dem3 = dem22[ind]
 print "pamap dem 1 ok"
 
-bio3 = bio22[ind]
+bio3 = bionf[ind]
 print "pamap bio 2 ok"
 
-pre3 = pre22[ind]
+pre3 = prenf[ind]
 print "pamap pre 3 ok"
 
-epr3 = epr22[ind]
+epr3 = eprnf[ind]
 print "pamap epr 4 ok"
 
 herb3 = herb22[ind]
@@ -179,7 +183,7 @@ print "pamap ndvi 7 ok"
 ndwi3 = ndwi22[ind]
 print "pamap ndwi 8 ok"
 
-slope3 = slope22[ind]
+slope3 = slopenf[ind]
 print "pamap slope 9 ok"
 
 tree3 = tree22[ind]
@@ -210,14 +214,17 @@ print "pmh ok"
 
 out = pygrass.raster.RasterNumpy('results', mtype='FCELL')
 
-new[:] = pmh
+out[:] = pmh
 
-new.close()
+out.close()
 
-new.open()  # re-open the closed map
-new.close()  # then close
+# export directly as tif!
+out.open()  # re-open the closed map
+out.close()  # then close
 os.system('d.erase')
 os.system('d.rast results')
+# convert zeros to null values
+# produce a new masked map by ecoregion
 os.system('r.out.gdal in=results output=results.tif')
 
 print "results exported"
