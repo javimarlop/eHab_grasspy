@@ -209,29 +209,63 @@ print "Ycov ok"
 #Ycov = numpy.cov(Y,rowvar=False)
 
 mh = mahalanobis_distances(Ymean, Ycov, ind_global, parallel=True)
+mhf = mahalanobis_distances(Ymean, Ycov, ind_global, parallel=False)
+mhs = mahalanobis_distances_scipy(Ymean, Ycov, ind_global, parallel=True)
+mhsf = mahalanobis_distances_scipy(Ymean, Ycov, ind_global, parallel=False)
 print "mh ok"
 
 from scipy.stats import chisqprob
 pmh = chisqprob(mh,9).reshape((1878,5046))
+pmhf = chisqprob(mhf,9).reshape((1878,5046))
+pmhs = chisqprob(mhs,9).reshape((1878,5046))
+pmhsf = chisqprob(mhsf,9).reshape((1878,5046))
 #### volver a poner dimensiones de cuando haces el mh! ####
 print "pmh ok"
 # quitar valores muy bajos!
 
 out = pygrass.raster.RasterNumpy('results', mtype='FCELL')
-
 out[:] = pmh
-
 out.close()
+
+outf = pygrass.raster.RasterNumpy('resultsf', mtype='FCELL')
+outf[:] = pmhf
+outf.close()
+
+outs = pygrass.raster.RasterNumpy('resultss', mtype='FCELL')
+outs[:] = pmhs
+outs.close()
+
+outsf = pygrass.raster.RasterNumpy('resultssf', mtype='FCELL')
+outsf[:] = pmhsf
+outsf.close()
 
 # export directly as tif!
 out.open()  # re-open the closed map
 out.close()  # then close
-os.system('d.erase')
-os.system('d.rast results')
+
+outf.open()
+outf.close()  # then close
+
+outs.open()
+outs.close()  # then close
+
+outsf.open()
+outsf.close()  # then close
+
+#os.system('d.erase')
+#os.system('d.rast results')
 os.system('r.null map=results setn=0') # convert zeros to null values
+os.system('r.null map=resultsf setn=0')
+os.system('r.null map=resultss setn=0')
+os.system('r.null map=resultssf setn=0')
+
 # produce a new masked map by ecoregion
 #os.system('r.out.gdal in=results output=results.tif --o')
 os.system('r.mapcalc "difs = results - results_R" --o') #testing difs with R output
+os.system('r.mapcalc "difsf = resultsf - results_R" --o')
+os.system('r.mapcalc "difss = resultss - results_R" --o')
+os.system('r.mapcalc "difssf = resultssf - results_R" --o')
+
 os.system('r.pintame difs')
 print "results exported"
 # export!
@@ -253,13 +287,27 @@ hr1 = pmh >= 0.5
 hr2 = sum(hr1)
 hr3 = hr2/len(slope3)
 
+hr1f = pmhf >= 0.5
+hr2f = sum(hr1f)
+hr3f = hr2f/len(slope3)
+
+hr1s = pmhs >= 0.5
+hr2s = sum(hr1s)
+hr3s = hr2s/len(slope3)
+
+hr1sf = pmhsf >= 0.5
+hr2sf = sum(hr1sf)
+hr3sf = hr2sf/len(slope3)
+
 with open('hri_results.csv', 'wb') as test_file:
 	file_writer = csv.writer(test_file)
 	# write headers, see the return array for the actual contents
 	#file_writer.writerow(['wdpa_id', 'ap', 'wn', 'time1', 'time2'])
 	#for elem in bp_results:
-	file_writer.writerow(hri3) # inlcude wdpaid and ecoreg!
-
+	file_writer.writerow(hr3) # inlcude wdpaid and ecoreg!
+	file_writer.writerow(hr3f)
+	file_writer.writerow(hr3s)
+	file_writer.writerow(hr3sf)
 # from skimage import io
 
 # io.imshow(pmh)
