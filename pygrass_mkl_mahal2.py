@@ -73,8 +73,13 @@ import csv
 import os
 import grass.pygrass as pygrass
 
-#os.system('g.region rast=global_eco3 zoom=global_eco3')
-#os.system('r.mask global_eco3 maskc=1')
+os.system('g.remove MASK')
+os.system('d.erase')
+os.system('g.region rast=global_eco3 zoom=global_eco3')
+os.system('d.erase')
+os.system('r.mask global_eco3 maskc=1')
+os.system('d.erase')
+os.system('d.rast dem')
 
 print "open global variables"
 dem = pygrass.raster.RasterNumpy('dem')
@@ -223,10 +228,11 @@ out.open()  # re-open the closed map
 out.close()  # then close
 os.system('d.erase')
 os.system('d.rast results')
-# convert zeros to null values
+os.system('r.null map=results setn=0') # convert zeros to null values
 # produce a new masked map by ecoregion
-os.system('r.out.gdal in=results output=results.tif')
-
+#os.system('r.out.gdal in=results output=results.tif --o')
+os.system('r.mapcalc "difs = results - results_R" --o') #testing difs with R output
+os.system('r.pintame difs')
 print "results exported"
 # export!
 
