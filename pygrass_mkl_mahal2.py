@@ -1,13 +1,17 @@
+from time import clock
+t0 = clock() 
 import mkl
-mkl.set_num_threads(1)
-#except ImportError:
-#pass
-
 import numpy as np
 import scipy
 from scipy.linalg import cholesky, solve_triangular
 from sklearn.externals.joblib import Parallel, delayed
 from multiprocessing import cpu_count
+import csv
+import os
+mkl.set_num_threads(1)
+#except ImportError:
+#pass
+
 # Thanks to Sturla Molden for the Mahalanobis functions
 
 ####
@@ -26,7 +30,8 @@ def _mahalanobis_distances(m, L, X):
 	 cX = X - m[np.newaxis,:]
 	 tmp = solve_triangular(L, cX.T, lower=True).T
 	 tmp **= 2
-	 return np.sqrt(tmp.sum(axis=1))
+	 #return np.sqrt(tmp.sum(axis=1))
+	 return tmp.sum(axis=1)
 
 def mahalanobis_distances(m, S, X, parallel=True):
 	 L = cholesky(S, lower=True)
@@ -69,8 +74,7 @@ def mahalanobis_distances_scipy(m, S, X, parallel=True):
 ###
 print "scripts loaded"
 
-import csv
-import os
+
 import grass.pygrass as pygrass
 
 os.system('g.remove MASK')
@@ -214,11 +218,11 @@ mh = mahalanobis_distances(Ymean, Ycov, ind_global, parallel=True)
 # mhsf = mahalanobis_distances_scipy(Ymean, Ycov, ind_global, parallel=False)
 print "mh ok"
 
-from scipy import stats
-pmh2 = stats.chi2.pdf(mh , 9).reshape((1878,5046))
+#from scipy import stats
+#pmh2 = 1 - stats.chi2.cdf(mh , 9).reshape((1878,5046))
 
 from scipy.stats import chisqprob
-pmh = chisqprob(mh,9).reshape((1878,5046))
+pmh = chisqprob(mh,9).reshape((1878,5046)) ###change!!!!####
 # pmhf = chisqprob(mhf,9).reshape((1878,5046))
 # pmhs = chisqprob(mhs,9).reshape((1878,5046))
 # pmhsf = chisqprob(mhsf,9).reshape((1878,5046))
@@ -230,9 +234,9 @@ out = pygrass.raster.RasterNumpy('results', mtype='FCELL')
 out[:] = pmh
 out.close()
 
-outf = pygrass.raster.RasterNumpy('resultsf', mtype='FCELL')
-outf[:] = pmh2
-outf.close()
+# outf = pygrass.raster.RasterNumpy('resultsf', mtype='FCELL')
+# outf[:] = pmh2
+# outf.close()
 
 # outs = pygrass.raster.RasterNumpy('resultss', mtype='FCELL')
 # outs[:] = pmhs
@@ -246,8 +250,8 @@ outf.close()
 out.open()  # re-open the closed map
 out.close()  # then close
 
-outf.open()
-outf.close()  # then close
+#outf.open()
+#outf.close()  # then close
 
 # outs.open()
 # outs.close()  # then close
@@ -258,7 +262,7 @@ outf.close()  # then close
 #os.system('d.erase')
 #os.system('d.rast results')
 os.system('r.null map=results setn=0') # convert zeros to null values
-os.system('r.null map=resultsf setn=0')
+#os.system('r.null map=resultsf setn=0')
 # os.system('r.null map=resultss setn=0')
 # os.system('r.null map=resultssf setn=0')
 
@@ -269,7 +273,7 @@ os.system('r.null map=resultsf setn=0')
 # os.system('r.mapcalc "difss = resultss - results_R" --o')
 # os.system('r.mapcalc "difssf = resultssf - results_R" --o')
 
-os.system('r.pintame difs')
+#os.system('r.pintame difs')
 print "results exported"
 # export!
 
@@ -316,14 +320,47 @@ with open('hri_results.csv', 'wb') as test_file:
 # io.imshow(pmh)
 # io.show()
 
+from osgeo import osr, gdal
+from osgeo.gdalconst import *  
+
+raster_file = 'results.tif' 
+output_file = 'output.tif' 
+
+#Opening the raster file  
+dataset = gdal.Open(raster_file, GA_ReadOnly )  
+band = dataset.GetRasterBand(1)  
+#Reading the raster properties  
+projectionfrom = dataset.GetProjection()  
+geotransform = dataset.GetGeoTransform()  
+xsize = band.XSize  
+ysize = band.YSize  
+datatype = band.DataType  
+
+#format = "GTiff"
+#driver = gdal.GetDriverByName( format )
+#dst_ds = driver.Create("out.tif", 512, 512, 1, gdal.GDT_Byte )
+#out_str = np.zeros( (xsize, ysize) )
+#out_str = pmh
+
+gtiff = gdal.GetDriverByName('GTiff')   
+output_dataset = gtiff.Create(output_file, xsize, ysize, 1)  
+output_dataset.SetProjection(projectionfrom)  
+output_dataset.SetGeoTransform(geotransform)  
+
+output_dataset.GetRasterBand(1).WriteArray(pmh)
+
+#output_dataset.GetRasterBand(1).WriteRaster( 0, 0, xsize, ysize, out_str )   
+#output_dataset = None 
+
 
 #print "exporting csv" # aqui exportariamos la imagen como tif con rasterio usando como modelo la creada para el PA!
-#np.savetxt("pmh.csv", pmh, delimiter=";")
+#np.savetxt("mh.csv", mh, delimiter=";")
 
 ## otros metodos para calcular las distancias!
 #mh = mahalanobis_distances(Ymean, Ycov, ind_global, parallel=False)
 #mh = mahalanobis_distances(Ymean, Ycov, ind_global, parallel=True)
 #mh = mahalanobis_distances_scipy(Ymean, Ycov, ind_global, parallel=True)
 #mh = mahalanobis_distances_scipy(Ymean, Ycov, ind_global, parallel=False)
-
+t1 = clock()
+print("Time spent: %f ms" % (1000*(t1-t0),))
 print "DONE"
